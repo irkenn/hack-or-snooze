@@ -58,3 +58,7 @@ function navFavoriteClick(evt){
 }
 
 $navFavoriteStory.on("click", navFavoriteClick);
+
+
+
+$starIcon
