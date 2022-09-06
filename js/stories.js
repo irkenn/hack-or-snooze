@@ -10,6 +10,7 @@ async function getAndShowStoriesOnStart() {
   $storiesLoadingMsg.remove();
 
   putStoriesOnPage();
+
 }
 
 /**
@@ -28,6 +29,9 @@ function generateStoryMarkup(story) {
         <span class= "star-icon">
           <i class = "far fa-star"></i>
         </span>
+        <span class= "trash-icon hidden">
+          <i class = "fas fa-trash"></i>
+        </span>
         <a href="${story.url}" target="a_blank" class="story-link">
           ${story.title}
         </a>
@@ -37,11 +41,6 @@ function generateStoryMarkup(story) {
       </li>
     `);
 }
-
-/*agregar event listener a los íconos de estrella y trash
-para estrella, extraer storId y alimentar addToFavorites con ese parámetro
-para trash crear función para eliminar las historias propias.
-*/
 
 /** Gets list of stories from server, generates their HTML, and puts on page. */
 
@@ -55,51 +54,15 @@ function putStoriesOnPage() {
     const $story = generateStoryMarkup(story);
     $allStoriesList.append($story);
   }
-
+  User.favoriteStarToggler();
   $allStoriesList.show();
+  User.addTrashIcon();
 }
-
-//##############################################
-function generateFavoriteMarkup(favorite){
-  console.debug("generateFavoriteMarkup", favorite);
-  return $(`
-    <li id="${favorite.storyId}">
-        <span class= "star-icon">
-          <i class = "far fa-star"></i>
-        </span>
-        <span class= "trash-icon">
-          <i class = "fas fa-trash"></i>
-        </span>
-        <a href="${favorite.url}" target="a_blank" class="favorite-link">
-          ${favorite.title}
-        </a>
-        <small class="favorite-hostname">(${favorite.url})</small>
-        <small class="favorite-author">by ${favorite.author}</small>
-        <small class="favorite-user">posted by ${favorite.username}</small>
-      </li>
-  `)
-
-}
-
-//##############################################
-
-async function putFavoritesOnPage(){
-  console.debug("putFavoritesOnPage");
-  $favoriteStoriesList.empty();
-  await checkForRememberedUser();
-  for (let favorite of currentUser.favorites){
-    const $favorite = generateFavoriteMarkup(favorite);
-    $favoriteStoriesList.append($favorite);
-  }
-  $favoriteStoriesList.show()
-}
-
-
 
 function retrieveStoryData(evt){
+  console.debug("retrieveStoryData");
   evt.preventDefault();
   const newStory = {};
-  console.debug("retrieveStoryData");
   newStory.author = $authorInput.val();
   newStory.title = $titleInput.val();
   newStory.url = $urlInput.val();
@@ -112,3 +75,34 @@ function retrieveStoryData(evt){
 }
 
 $submitForm.on("submit", retrieveStoryData);
+
+async function favoriteHandler(evt){
+  console.debug("favoriteHandler");
+  evt.preventDefault();
+  //light star => add favorite
+
+  if (evt.target.parentElement.className === "star-icon"){
+    if (evt.target.classList.contains("far", "fa-star")){
+      await User.addFavorite(evt.target.parentElement.parentElement.id);
+      evt.target.classList.remove("far", "fa-star");
+      evt.target.classList.add("fas", "fa-star");
+    }
+    //bold star => delete favorite
+    else if (evt.target.classList.contains("fas", "fa-star")){
+      await User.deleteFavorite(evt.target.parentElement.parentElement.id);
+      evt.target.classList.remove("fas", "fa-star");
+      evt.target.classList.add("far", "fa-star");
+      // await User.putFavoritesOnPage();
+    }
+  }
+      //trash can => delete story
+  else if (evt.target.parentElement.classList.contains("trash-icon")){
+    console.debug("Trash icon selected");
+    await User.deleteStory(evt.target.parentElement.parentElement.id);
+    getAndShowStoriesOnStart();
+  }
+
+}
+
+$allStoriesList.on("click", favoriteHandler);
+$favoriteStoriesList.on("click", favoriteHandler);

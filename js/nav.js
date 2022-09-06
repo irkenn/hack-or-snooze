@@ -26,7 +26,6 @@ function showSubmitForm(evt){
 
 $navSubmitStory.on("click", showSubmitForm);
 
-
 /** Show login/signup on click on "login" */
 
 function navLoginClick(evt) {
@@ -37,8 +36,6 @@ function navLoginClick(evt) {
 }
 
 $navLogin.on("click", navLoginClick);
-
-
 
 /** When a user first logins in, update the navbar to reflect that. */
 
@@ -54,11 +51,7 @@ function updateNavOnLogin() {
 function navFavoriteClick(evt){
   console.debug("navFavoriteClick", evt);
   hidePageComponents();
-  putFavoritesOnPage();
+  User.putFavoritesOnPage();
 }
 
 $navFavoriteStory.on("click", navFavoriteClick);
-
-
-
-$starIcon

@@ -14,8 +14,6 @@ class Story {
   /** Make instance of Story from data object about story:
    *   - {title, author, url, username, storyId, createdAt}
    */
-  
-
   constructor({ storyId, title, author, url, username, createdAt }) {
     this.storyId = storyId;
     this.title = title;
@@ -26,9 +24,7 @@ class Story {
   }
 
   /** Parses hostname out of URL and returns it. */
-
   getHostName() {
-    // UNIMPLEMENTED: complete this function!
     return BASE_URL;
   }
 }
@@ -43,21 +39,14 @@ class StoryList {
     this.stories = stories;
   }
 
-  /** Generate a new StoryList. It:
-   *
-   *  - calls the API
-   *  - builds an array of Story instances
-   *  - makes a single StoryList instance out of that
+  /** StoryList will:
+   *  - call the API
+   *  - build an array of Story instances
+   *  - make a single StoryList instance out of that
    *  - returns the StoryList instance.
    */
-
   static async getStories() {
-    // Note presence of `static` keyword: this indicates that getStories is
-    //  **not** an instance method. Rather, it is a method that is called on the
-    //  class directly. Why doesn't it make sense for getStories to be an
-    //  instance method? Answer: Because the URL is static?
 
-    // query the /stories endpoint (no auth required)
     const response = await axios({
       url: `${BASE_URL}/stories`,
       method: "GET",
@@ -92,73 +81,11 @@ class StoryList {
     const story = new Story(response);
     //update the DOM with the new story
     hidePageComponents();
-    getAndShowStoriesOnStart();
-    
+    getAndShowStoriesOnStart();  
     return story;
   }
 
 }
-
-
-//  async function addFavorites(favoriteStoryId){
-//     //get credentials
-//     const token = localStorage.token;
-//     const username = localStorage.username;
-//     //API communication
-//     let response = await axios({
-//       url: `${BASE_URL}/users/${username}/favorites/${favoriteStoryId}`,
-//       method: "POST",
-//       user: {"user": username, "token": token},
-//       data : { "token": token,
-//             "favorites" : favoriteStoryId},
-//     })
-//     console.log("This is response :", response);
-
-//   }
-  //##################################################
-  /*hice add favorites para enviar mensaje al API el resultado se puede ver
-  en currentUser.favorites ahí se muestran todas las historias favoritas.
-
-  Con getFavorites (LN:129), se buscan las historias favoritas que puedan estar almacenadas
-  ahi   (¿Qué pasa con currentUser cuando se hace el log out? ¿Se borra el array de 
-        favoritos?)
-  Lo siguiente es usar el array de get favorites, para hace un loop que pueda 
-  agregarlos al DOM, (línea 55 de stories.js)  
-  ¿Se usa una Clase y cual sería el objetivo de usar una clase?
-  Eliminar favoritos => trabajar en el proceso con la API
-  
-  La lista se agrega a $favoriteStoriesList, ahí se necesita un  .show() y .hide(), etc
-*/
-  //##################################################
-  async function getFavorites(){
-
-  }
-
-
-  async function addFavorite(favoriteStoryId){
-    //get credentials
-    const token = localStorage.token;
-    const username = localStorage.username;
-    //API communication
-    let response = await axios({
-      url: `${BASE_URL}/users/${username}/favorites/${favoriteStoryId}`,
-      method: "POST",
-      data : { token: token },
-    })
-    //add it to currentUser.favorites
-    await putFavoritesOnPage();
-  }
-
-  async function deleteFavorite(favoriteStoryId){
-
-    let response = await axios({
-      url: `${BASE_URL}/users/${localStorage.username}/favorites/${favoriteStoryId}`,
-      method : "DELETE",
-      data : {token : localStorage.token },
-    })
-    console.log("This is delete response :", response);
-    await putFavoritesOnPage();
-  }
 /******************************************************************************
  * User: a user in the system (only used to represent the current user)
  */
@@ -168,7 +95,6 @@ class User {
    *   - {username, name, createdAt, favorites[], ownStories[]}
    *   - token
    */
-
   constructor({
                 username,
                 name,
@@ -203,7 +129,6 @@ class User {
       data: { user: { username, password, name } },
     });
     
-
     let { user } = response.data
 
     return new User(
@@ -274,4 +199,92 @@ class User {
       return null;
     }
   }
+
+
+  static async addFavorite(favoriteStoryId){
+    console.debug("addFavorite");
+    //get credentials
+    const token = localStorage.token;
+    const username = localStorage.username;
+    //API communication
+    let response = await axios({
+      url: `${BASE_URL}/users/${username}/favorites/${favoriteStoryId}`,
+      method: "POST",
+      data : { token: token },
+    })
+  }
+
+  static async deleteFavorite(favoriteStoryId){
+    console.debug("deleteFavorite");
+    let response = await axios({
+      url: `${BASE_URL}/users/${localStorage.username}/favorites/${favoriteStoryId}`,
+      method : "DELETE",
+      data : {token : localStorage.token },
+    })
+  }
+
+
+  static generateFavoriteMarkup(favorite){
+    console.debug("generateFavoriteMarkup");
+    return $(`
+      <li id="${favorite.storyId}">
+          <span class= "star-icon">
+            <i class = "fas fa-star"></i>
+          </span>
+          <a href="${favorite.url}" target="a_blank" class="favorite-link">
+            ${favorite.title}
+          </a>
+          <small class="favorite-hostname">(${favorite.url})</small>
+          <small class="favorite-author">by ${favorite.author}</small>
+          <small class="favorite-user">posted by ${favorite.username}</small>
+        </li>
+    `)
+  }
+
+  
+  static async putFavoritesOnPage(){
+    console.debug("putFavoritesOnPage");
+    $favoriteStoriesList.empty();
+    await checkForRememberedUser();
+    for (let favorite of currentUser.favorites){
+      //add items to the Favorites section
+      const $favorite = User.generateFavoriteMarkup(favorite);
+      $favoriteStoriesList.append($favorite);
+    }
+    $favoriteStoriesList.show()
+  }
+
+  static async favoriteStarToggler(){
+    console.debug("favoriteStarToggler");
+    await checkForRememberedUser();
+    for (let favorite of currentUser.favorites){
+      const $liStory = $(`#${favorite.storyId}`).children().children();
+      $liStory[0].classList.remove("far", "fa-star");
+      $liStory[0].classList.add("fas", "fa-star");
+    }
+  }
+
+  static async deleteStory(storyId){
+    console.debug("deleteStorie");
+    try {
+      let response = await axios({
+        url: `${BASE_URL}/stories/${storyId}`,
+        method: "DELETE",
+        data : { token: localStorage.token },
+      })
+    } catch (err) {
+      console.error("deleteStory failed");
+    }
+  }
+
+  static async addTrashIcon(){
+    console.debug("addTrashIcon");
+    await checkForRememberedUser();
+    for (let story of currentUser.ownStories){
+      const $story = $(`#${story.storyId} :nth-child(2)`);
+      $story.show();
+    }
+  }
+
 }
+

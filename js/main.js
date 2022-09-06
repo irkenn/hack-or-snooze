@@ -27,6 +27,7 @@ const $titleInput = $("#title-input");
 const $urlInput = $("#url-input");
   //icon section
 const $starIcon = $(".star-icon");
+
 const $trashIcon = $(".trash-icon");
 
 
